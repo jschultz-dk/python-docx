@@ -6,6 +6,7 @@ from typing import IO, TYPE_CHECKING, cast
 
 from docx.document import Document
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from docx.parts.footnotes import FootnotesPart
 from docx.parts.comments import CommentsPart
 from docx.parts.hdrftr import FooterPart, HeaderPart
 from docx.parts.numbering import NumberingPart
@@ -67,6 +68,14 @@ class DocumentPart(StoryPart):
     def footer_part(self, rId: str):
         """Return |FooterPart| related by `rId`."""
         return self.related_parts[rId]
+
+    @property
+    def footnotes(self):
+        """
+        A |Footnotes| object providing access to the footnotes in the footnotes part
+        of this document.
+        """
+        return self._footnotes_part.footnotes
 
     def get_style(self, style_id: str | None, style_type: WD_STYLE_TYPE) -> BaseStyle:
         """Return the style in this document matching `style_id`.
@@ -138,6 +147,19 @@ class DocumentPart(StoryPart):
             comments_part = CommentsPart.default(self.package)
             self.relate_to(comments_part, RT.COMMENTS)
             return comments_part
+
+    @property
+    def _footnotes_part(self):
+        """
+        Instance of |FootnotesPart| for this document. Creates an empty footnotes
+        part if one is not present.
+        """
+        try:
+            return self.part_related_by(RT.FOOTNOTES)
+        except KeyError:
+            footnotes_part = FootnotesPart.default(self.package)
+            self.relate_to(footnotes_part, RT.FOOTNOTES)
+            return footnotes_part
 
     @property
     def _settings_part(self) -> SettingsPart:

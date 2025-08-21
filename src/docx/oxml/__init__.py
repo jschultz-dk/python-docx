@@ -1,5 +1,3 @@
-# ruff: noqa: E402, I001
-
 """Initializes oxml sub-package.
 
 This including registering custom element classes corresponding to Open XML elements.
@@ -112,20 +110,30 @@ register_element_cls("w:numbering", CT_Numbering)
 register_element_cls("w:startOverride", CT_DecimalNumber)
 
 from .section import (
+from .section import (  # noqa
+    CT_FtnProps,
+    CT_FtnPos,
     CT_HdrFtr,
     CT_HdrFtrRef,
     CT_PageMar,
     CT_PageSz,
+    CT_NumFmt,
+    CT_NumRestart,
     CT_SectPr,
     CT_SectType,
 )
 
+register_element_cls("w:footnotePr", CT_FtnProps)
 register_element_cls("w:footerReference", CT_HdrFtrRef)
 register_element_cls("w:ftr", CT_HdrFtr)
 register_element_cls("w:hdr", CT_HdrFtr)
 register_element_cls("w:headerReference", CT_HdrFtrRef)
+register_element_cls("w:numFmt", CT_NumFmt)
+register_element_cls("w:numStart", CT_DecimalNumber)
+register_element_cls("w:numRestart", CT_NumRestart)
 register_element_cls("w:pgMar", CT_PageMar)
 register_element_cls("w:pgSz", CT_PageSz)
+register_element_cls("w:pos", CT_FtnPos)
 register_element_cls("w:sectPr", CT_SectPr)
 register_element_cls("w:type", CT_SectType)
 
@@ -249,3 +257,13 @@ register_element_cls("w:spacing", CT_Spacing)
 register_element_cls("w:tab", CT_TabStop)
 register_element_cls("w:tabs", CT_TabStops)
 register_element_cls("w:widowControl", CT_OnOff)
+
+# ---------------------------------------------------------------------------
+# footnote-related mappings
+
+from .footnote import CT_Footnotes, CT_FtnEnd
+from .text.footnote_reference import CT_FtnEdnRef
+
+register_element_cls("w:footnoteReference", CT_FtnEdnRef)
+register_element_cls("w:footnote", CT_FtnEnd)
+register_element_cls("w:footnotes", CT_Footnotes)
