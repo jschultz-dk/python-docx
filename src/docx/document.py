@@ -39,6 +39,7 @@ class Document(ElementProxy):
         self._element = element
         self._part = part
         self.__body = None
+        self._next_footnote_reference_id: int | None = None
 
     def add_comment(
         self,
@@ -256,42 +257,59 @@ class Document(ElementProxy):
             self.__body = _Body(self._element.body, self)
         return self.__body
 
+    def _ensure_next_footnote_counter(self) -> None:
+        """Initialize the next-footnote-id counter once, based on current content."""
+        if self._next_footnote_reference_id is not None:
+            return
+        max_id = 0
+        for para in self.paragraphs:
+            ids = getattr(para._p, "footnote_reference_ids", [])
+            if ids:
+                max_id = max(max_id, max(ids))
+        # Next id is max(existing)+1 (or 1 if none).
+        self._next_footnote_reference_id = max(1, max_id + 1)
+
     def _calculate_next_footnote_reference_id(self, p: CT_P) -> int:
         """Return the appropriate footnote reference id number for
         a new footnote added at the end of paragraph `p`."""
-        # When adding a footnote it can be inserted
-        # in front of some other footnotes, so
-        # we need to sort footnotes by `footnote_reference_id`
-        # in |Footnotes| and in |Paragraph|
+        # Fast path: if appending to the document's last paragraph, a simple counter suffices.
+        self._ensure_next_footnote_counter()
+        if self.paragraphs and (p is self.paragraphs[-1]._p):
+            nid = self._next_footnote_reference_id  # type: ignore[reportGeneralTypeIssues]
+            # Bump the counter for the subsequent append.
+            self._next_footnote_reference_id = nid + 1  # type: ignore[reportGeneralTypeIssues]
+            return nid  # type: ignore[reportGeneralTypeIssues]
+
+        # Fallback: inserting in the middle — compute local new id and renumber following paragraphs.
         new_fr_id = 1
-        # If paragraph already contains footnotes
-        # append the new footnote and the end with the next reference id.
+        # If the paragraph already contains footnotes, append after its last one.
         if len(p.footnote_reference_ids) > 0:
             new_fr_id = p.footnote_reference_ids[-1] + 1
-        # Read the paragraphs containing footnotes and find where the
-        # new footnote will be. Keeping in mind that the footnotes are
-        # sorted by id.
-        # The value of the new footnote id is the value of the first paragraph
-        # containing the footnote id that is before the new footnote, incremented by one.
-        # If a paragraph with footnotes is after the new footnote
-        # then increment thous footnote ids.
+
         has_passed_containing_para = False
         for p_i in reversed(range(len(self.paragraphs))):
-            # mark when we pass the paragraph containing the footnote
-            if p is self.paragraphs[p_i]._p:
+            para = self.paragraphs[p_i]
+            # mark when we pass the paragraph containing the new footnote
+            if p is para._p:
                 has_passed_containing_para = True
                 continue
+            ids = para._p.footnote_reference_ids
             # Skip paragraphs without footnotes (they don't impact new id).
-            if len(self.paragraphs[p_i]._p.footnote_reference_ids) == 0:
+            if len(ids) == 0:
                 continue
-            # These footnotes are after the new footnote, so we increment them.
             if not has_passed_containing_para:
-                self.paragraphs[p_i]._increment_containing_footnote_reference_ids()
+                # These footnotes are after the insertion point; increment them to keep ordering unique.
+                para._increment_containing_footnote_reference_ids()
             else:
-                # This is the last footnote before the new footnote, so we use its
-                # value to determent the value of the new footnote.
-                new_fr_id = max(self.paragraphs[p_i]._p.footnote_reference_ids) + 1
+                # Last footnote before insertion; new id should be after the largest earlier id.
+                new_fr_id = max(new_fr_id, max(ids) + 1)
                 break
+
+        # Keep the global counter consistent: next id should be at least new_fr_id+1
+        # to avoid reuse on subsequent appends.
+        if self._next_footnote_reference_id is not None:
+            self._next_footnote_reference_id = max(self._next_footnote_reference_id, new_fr_id + 1)
+
         return new_fr_id
 
 

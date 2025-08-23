@@ -42,6 +42,10 @@ class Paragraph(StoryChild):
         footnote = document._add_footnote(new_fr_id)
         return footnote
 
+    def add_footnote_ref(self) -> CT_FtnRef:
+        r = self._p.add_r()
+        return r.add_footnoteRef()
+
     def add_run(self, text: str | None = None, style: str | CharacterStyle | None = None) -> Run:
         """Append run containing `text` and having character-style `style`.
 

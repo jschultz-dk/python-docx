@@ -34,30 +34,33 @@ class Footnotes(Parented):
         be inserted in the correct spot by `footnote_reference_id`.
         The footnotes are kept in order by `footnote_reference_id`."""
         elements = self._element  # for easy access
-        new_footnote = None
-        if elements.get_by_id(footnote_reference_id) is not None:
-            # When adding a footnote it can be inserted
-            # in front of some other footnotes, so
-            # we need to sort footnotes by `footnote_reference_id`
-            # in |Footnotes| and in |Paragraph|
-            #
-            # resolve reference ids in |Footnotes|
-            # iterate in reverse and compare the current
-            # id with the inserted id. If there are the same
-            # insert the new footnote in that place, if not
-            # increment the current footnote id.
-            for index in reversed(range(len(elements))):
-                if elements[index].id == footnote_reference_id:
-                    elements[index].id += 1
-                    new_footnote = elements[index].add_footnote_before(
-                        footnote_reference_id
-                    )
-                    break
-                else:
-                    elements[index].id += 1
-        else:
-            # append the newly created |Footnote| to |Footnotes|
+        # Fast path: empty collection or strictly appending at the end — no shifting needed.
+        if len(elements) == 0 or footnote_reference_id > elements[-1].id:
             new_footnote = elements.add_footnote(footnote_reference_id)
+            return Footnote(new_footnote, self)
+
+        # Slow path: inserting into the middle or colliding with an existing id.
+        # Shift all existing footnotes with id >= target up by 1 to maintain uniqueness.
+        # We iterate in reverse to avoid stepping on ids we still need to process.
+        new_footnote = None
+        # If elements are maintained sorted by id (as typical), we can break once ids drop below the target.
+        for index in reversed(range(len(elements))):
+            current_id = elements[index].id
+            if current_id < footnote_reference_id:
+                # Earlier ids are unaffected; we can stop if order-by-id is maintained.
+                break
+            if current_id == footnote_reference_id and new_footnote is None:
+                # Bump the existing one, insert the new before it at the target id.
+                elements[index].id = current_id + 1
+                new_footnote = elements[index].add_footnote_before(footnote_reference_id)
+            else:
+                # Bump all others >= target to keep ids unique.
+                elements[index].id = current_id + 1
+
+        # If no collision was found (a gap existed), just add a new footnote with the requested id.
+        if new_footnote is None:
+            new_footnote = elements.add_footnote(footnote_reference_id)
+
         return Footnote(new_footnote, self)
 
 

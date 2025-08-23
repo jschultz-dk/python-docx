@@ -110,7 +110,6 @@ register_element_cls("w:numbering", CT_Numbering)
 register_element_cls("w:startOverride", CT_DecimalNumber)
 
 from .section import (
-from .section import (  # noqa
     CT_FtnProps,
     CT_FtnPos,
     CT_HdrFtr,

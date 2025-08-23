@@ -14,7 +14,7 @@ from docx.shared import TextAccumulator
 
 if TYPE_CHECKING:
     from docx.oxml.shape import CT_Anchor, CT_Inline
-    from docx.oxml.text.footnote_reference import CT_FtnEdnRef
+    from docx.oxml.text.footnote_reference import CT_FtnEdnRef, CT_FtnRef
     from docx.oxml.text.pagebreak import CT_LastRenderedPageBreak
     from docx.oxml.text.parfmt import CT_TabStop
 
@@ -32,6 +32,7 @@ class CT_R(BaseOxmlElement):
     _add_t: Callable[..., CT_Text]
     _add_rPr: Callable[[], CT_RPr]
     _add_footnoteReference: Callable[[], CT_FtnEdnRef]
+    _add_footnoteRef: Callable[[], CT_FtnRef]
     footnoteReference_lst: List[CT_FtnEdnRef] | None
 
     rPr: CT_RPr | None = ZeroOrOne("w:rPr")  # pyright: ignore[reportAssignmentType]
@@ -41,6 +42,7 @@ class CT_R(BaseOxmlElement):
     t = ZeroOrMore("w:t")
     tab = ZeroOrMore("w:tab")
     footnoteReference = ZeroOrMore("w:footnoteReference")
+    footnoteRef = ZeroOrMore("w:footnoteRef")
 
     def add_footnoteReference(self, id: int) -> CT_FtnEdnRef:
         """Return a newly added ``<w:footnoteReference>`` element containing
@@ -49,6 +51,14 @@ class CT_R(BaseOxmlElement):
         rPr.style = "FootnoteReference"
         new_fr = self._add_footnoteReference()
         new_fr.id = id
+        return new_fr
+
+    def add_footnoteRef(self) -> CT_FtnRef:
+        """Return a newly added ``<w:footnoteRef>`` element containing
+        the footnote reference id."""
+        rPr = self._add_rPr()
+        rPr.style = "FootnoteReference"
+        new_fr = self._add_footnoteRef()
         return new_fr
 
     def add_t(self, text: str) -> CT_Text:

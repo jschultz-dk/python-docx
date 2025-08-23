@@ -9,3 +9,8 @@ class CT_FtnEdnRef(BaseOxmlElement):
 
     id = RequiredAttribute("w:id", ST_DecimalNumber)
     customMarkFollows = OptionalAttribute("w:customMarkFollows", ST_OnOff)
+
+
+class CT_FtnRef(BaseOxmlElement):
+    """``<w:footnoteRef>`` element """
+    pass
