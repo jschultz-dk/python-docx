@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator, List, cast
 
 from docx.enum.style import WD_STYLE_TYPE
-from docx.oxml.text.footnote_reference import CT_FtnEdnRef
+from docx.oxml.text.footnote_reference import CT_FtnEdnRef, CT_FtnRef
 from docx.oxml.text.run import CT_R
 from docx.shared import StoryChild
 from docx.styles.style import ParagraphStyle
@@ -45,6 +45,30 @@ class Paragraph(StoryChild):
     def add_footnote_ref(self) -> CT_FtnRef:
         r = self._p.add_r()
         return r.add_footnoteRef()
+
+    def add_hyperlink(self, url: str, text: str | None = None, *,
+                      tooltip: str | None = None,
+                      color: str = "0000FF",
+                      underline: bool = True,
+                      anchor: str | None = None) -> Run:
+
+        """
+        Insert a hyperlink at the end of `paragraph`.
+        """
+        # ... existing code ...
+        from docx.oxml.text.hyperlink import build_hyperlink
+
+        hyperlink, r_el = build_hyperlink(
+            self.part,
+            url,
+            text,
+            tooltip=tooltip,
+            color=color,
+            underline=underline,
+            anchor=anchor,
+        )
+        self._p.append(hyperlink)
+        return Run(cast(CT_R, r_el), self)
 
     def add_run(self, text: str | None = None, style: str | CharacterStyle | None = None) -> Run:
         """Append run containing `text` and having character-style `style`.

@@ -54,8 +54,7 @@ class CT_R(BaseOxmlElement):
         return new_fr
 
     def add_footnoteRef(self) -> CT_FtnRef:
-        """Return a newly added ``<w:footnoteRef>`` element containing
-        the footnote reference id."""
+        """Return a newly added ``<w:footnoteRef>`` Needed by Microsoft Word."""
         rPr = self._add_rPr()
         rPr.style = "FootnoteReference"
         new_fr = self._add_footnoteRef()
